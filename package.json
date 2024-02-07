@@ -1,0 +1,19 @@
+{
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.133",
+    "@types/node": "^20.11.16",
+    "esbuild": "^0.20.0",
+    "prettier": "3.2.5"
+  },
+  "scripts": {
+    "prebuild": "rm -rf dist",
+    "build": "esbuild src/index.ts --bundle --minify --sourcemap --platform=node --target=es2020 --outfile=dist/index.js",
+    "postbuild": "cd dist && zip -r index.zip index.js*"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.507.0",
+    "@aws-sdk/client-ssm": "^3.507.0",
+    "@aws-sdk/lib-dynamodb": "^3.507.0",
+    "googleapis": "^132.0.0"
+  }
+}
