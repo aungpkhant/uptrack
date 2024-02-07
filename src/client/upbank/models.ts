@@ -2,6 +2,7 @@ export interface ListTransactionParams {
   size: number;
   since: Date;
   until: Date;
+  status: string;
 }
 
 export interface ListTransactionResponse {
@@ -64,7 +65,7 @@ export interface AccountLinks {
 }
 
 export interface Category {
-  data: Data;
+  data?: Data;
 }
 
 export interface Tags {

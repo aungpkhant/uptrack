@@ -1,41 +1,60 @@
 import { Context, APIGatewayProxyResult, APIGatewayEvent } from "aws-lambda";
-import { UP_TOKEN, USER_ID, ACCOUNT_ID } from "./env";
-import upbank from "./upbank/api";
+import {
+  UP_TOKEN,
+  USER_ID,
+  ACCOUNT_ID,
+  SPREADHSHEET_ID,
+  SYNC_DAYS_AGO,
+  REGION,
+  getParameter,
+} from "./env";
+import { UpbankAPIClient } from "./client/upbank/client";
 import { subtractDaysFromDate } from "./util";
-import dynamo from "./dynamodb/repository";
+import { TransactionRepo } from "./repository/transactions";
+import { SheetsAPIClient } from "./client/gsheet/client";
+import { Credentials } from "./client/gsheet/models";
+import { UptrackService } from "./service/uptrack";
+
+async function init() {
+  let credentialsString = await getParameter(
+    "/production/google-cloud-credentials/service-account-json",
+    true
+  );
+  if (credentialsString === undefined) {
+    throw new Error(
+      "Parameter /production/google-cloud-credentials/service-account-json not found"
+    );
+  }
+  let credentials = JSON.parse(credentialsString) as Credentials;
+  return new SheetsAPIClient(credentials);
+}
 
 export const handler = async (
   event: APIGatewayEvent,
   context: Context
 ): Promise<APIGatewayProxyResult> => {
-  const currentDate = new Date();
-
-  const transactions = await upbank.listTransactionsByAccount(
-    ACCOUNT_ID,
-    UP_TOKEN,
-    {
-      size: 100,
-      since: subtractDaysFromDate(currentDate, 4),
-      until: currentDate,
-    }
+  const gsheetClient = await init();
+  const upbankClient = new UpbankAPIClient(UP_TOKEN);
+  const transactionRepo = new TransactionRepo(REGION);
+  const uptrackService = new UptrackService(
+    upbankClient,
+    gsheetClient,
+    transactionRepo
   );
 
-  const syncedTransactions = await dynamo.listTransactions(
+  const current = new Date();
+  const since = subtractDaysFromDate(current, SYNC_DAYS_AGO);
+
+  const results = await uptrackService.syncTransactions(
     USER_ID,
-    transactions.data.map((t) => t.id)
+    ACCOUNT_ID,
+    SPREADHSHEET_ID,
+    since,
+    current
   );
-  const unsyncedTransactions = transactions.data.filter(
-    (t) => !syncedTransactions.find((st) => st.transaction_id === t.id)
-  );
-
-  // push unsynced to gsheet
-
-  // save in dynamodb
 
   return {
     statusCode: 200,
-    body: JSON.stringify({
-      message: "hello world",
-    }),
+    body: JSON.stringify(results),
   };
 };
