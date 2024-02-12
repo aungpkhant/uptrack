@@ -1,6 +1,6 @@
 import { ListTransactionParams, ListTransactionResponse } from "./models";
 
-const UPBANK_BASE_URL = "https://api.up.com.au/api/v1";
+export const UPBANK_BASE_URL = "https://api.up.com.au/api/v1";
 
 class UpbankAPIClient {
   constructor(private readonly upToken: string) {
