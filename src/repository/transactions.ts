@@ -1,6 +1,6 @@
-import { DynamoDB } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
-import { TransactionRecord } from "./models";
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+import { TransactionRecord } from './models';
 
 class TransactionRepo {
   private dynamo: DynamoDBDocument;
@@ -24,10 +24,10 @@ class TransactionRepo {
     };
 
     const data = await this.dynamo.batchGet(params);
-    if (!data.Responses || !data.Responses["uptrack_transactions"]) {
-      throw new Error("No transactions found.");
+    if (!data.Responses || !data.Responses['uptrack_transactions']) {
+      throw new Error('No transactions found.');
     }
-    return data.Responses["uptrack_transactions"].map(
+    return data.Responses['uptrack_transactions'].map(
       (item) =>
         ({
           owner_id: item.owner_id,

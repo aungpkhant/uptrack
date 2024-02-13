@@ -12,7 +12,8 @@
     "build": "esbuild src/index.ts --bundle --minify --sourcemap --platform=node --target=es2020 --outfile=dist/index.js",
     "postbuild": "cd dist && zip -r index.zip index.js*",
     "test": "vitest",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "format": "prettier --write ./src/**/*.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.507.0",
