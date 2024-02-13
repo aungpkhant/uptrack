@@ -1,9 +1,17 @@
-## TODO
+## Uptrack
 
-- [ ] Remove - sign
-- [ ] Integrate Cloudwatch event
-- [ ] Integrate zod https://stackoverflow.com/a/66238542
-- [ ] Proper logging library
-- [ ] Send weekly / monthly email with SES
-- [ ] configure eslint 
-- `terraform import aws_lambda_function.uptrack arn:aws:lambda:ap-southeast-2:992382771770:function:uptrack`
+A cloud-native tool that periodically syncs your [Up Bank](https://developer.up.com.au/) transactions to Google Sheets.
+
+Built on top of [AWS Lambda](https://docs.aws.amazon.com/lambda/), [DynamoDB](https://aws.amazon.com/dynamodb) and [EventBridge](https://aws.amazon.com/eventbridge/) to schedule cronjobs using Typescript and Terraform as IaC tool of choice.
+
+### Why I built this tool?
+
+As much as I loved tracking my expenses, manually inputting them to a spreadsheet was killing a piece of my soul one keystroke at a time. The habit never stuck because of how monotonous it was.. until one day I discovered the Up Bank API and a lightbulb popped in my head.
+
+Also to add a practical project to my portfolio.
+
+### TODO
+
+- [x] Sync expenses to spreadsheet
+- [ ] Monthly expense summary email
+- [ ] Customize sheet columns
