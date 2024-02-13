@@ -138,3 +138,11 @@ resource "aws_cloudwatch_event_target" "uptrack_lambda" {
 output "event_rule_arn" {
   value = aws_cloudwatch_event_rule.sync_transactions.arn
 }
+
+resource "aws_lambda_permission" "eventbridge_permission" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.uptrack.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.sync_transactions.arn
+}
