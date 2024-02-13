@@ -1,5 +1,5 @@
-import { google, sheets_v4 } from "googleapis";
-import { Credentials } from "./models";
+import { google, sheets_v4 } from 'googleapis';
+import { Credentials } from './models';
 
 class SheetsAPIClient {
   private readonly auth: any;
@@ -8,9 +8,9 @@ class SheetsAPIClient {
   constructor(private readonly credentials: Credentials) {
     const { client_email, private_key } = credentials;
     this.auth = new google.auth.JWT(client_email, undefined, private_key, [
-      "https://www.googleapis.com/auth/spreadsheets",
+      'https://www.googleapis.com/auth/spreadsheets',
     ]);
-    this.sheets = google.sheets({ version: "v4", auth: this.auth });
+    this.sheets = google.sheets({ version: 'v4', auth: this.auth });
   }
 
   async appendData(
@@ -22,7 +22,7 @@ class SheetsAPIClient {
     await this.sheets.spreadsheets.values.append({
       spreadsheetId: spreadsheetID,
       range: `${sheetName}!${range}`,
-      valueInputOption: "USER_ENTERED",
+      valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: rows,
       },

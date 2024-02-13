@@ -57,13 +57,13 @@ class UptrackService {
   }
 
   private groupTransactionsByMonthAndYear(transactions: Transaction[]) {
-    let transactionByMonthMap = {} as Record<string, Transaction[]>;
+    const transactionByMonthMap = {} as Record<string, Transaction[]>;
 
     transactions.forEach((t) => {
-      let m = t.attributes.createdAt.getMonth();
-      let y = t.attributes.createdAt.getFullYear();
+      const m = t.attributes.createdAt.getMonth();
+      const y = t.attributes.createdAt.getFullYear();
 
-      let key = `${getMonthShortName(m)} ${y}`;
+      const key = `${getMonthShortName(m)} ${y}`;
 
       if (!transactionByMonthMap[key]) {
         transactionByMonthMap[key] = [];
@@ -75,8 +75,8 @@ class UptrackService {
   }
 
   private formatTransactionToGoogleSheetRow(t: Transaction) {
-    let date = `${t.attributes.createdAt.getDate()} ${getMonthShortName(t.attributes.createdAt.getMonth())} ${t.attributes.createdAt.getFullYear()}`;
-    let unsignedAmount = t.attributes.amount.value.split('-')[1];
+    const date = `${t.attributes.createdAt.getDate()} ${getMonthShortName(t.attributes.createdAt.getMonth())} ${t.attributes.createdAt.getFullYear()}`;
+    const unsignedAmount = t.attributes.amount.value.split('-')[1];
     return [
       date,
       t.attributes.description,
@@ -96,8 +96,8 @@ class UptrackService {
     const transactionByMonthMap = this.groupTransactionsByMonthAndYear(transactions);
 
     return Object.keys(transactionByMonthMap).map((key) => {
-      let sheetName = key;
-      let transactionsForMonth = transactionByMonthMap[key];
+      const sheetName = key;
+      const transactionsForMonth = transactionByMonthMap[key];
       const rows = transactionsForMonth.map(this.formatTransactionToGoogleSheetRow);
 
       return this.gsheetClient
@@ -162,7 +162,7 @@ class UptrackService {
       await this.transactionRepo.batchCreate(
         userID,
         createdTransactionsGoogleSheet.map((t) => {
-          let record = mapToTransactionRecord(t, userID);
+          const record = mapToTransactionRecord(t, userID);
           return record;
         })
       );

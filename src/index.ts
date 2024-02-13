@@ -1,4 +1,4 @@
-import { Context, APIGatewayProxyResult, APIGatewayEvent } from "aws-lambda";
+import { Context, APIGatewayProxyResult, APIGatewayEvent } from 'aws-lambda';
 import {
   UP_TOKEN,
   USER_ID,
@@ -7,25 +7,25 @@ import {
   SYNC_DAYS_AGO,
   REGION,
   getParameter,
-} from "./env";
-import { UpbankAPIClient } from "./client/upbank/client";
-import { subtractDaysFromDate } from "./util";
-import { TransactionRepo } from "./repository/transactions";
-import { SheetsAPIClient } from "./client/gsheet/client";
-import { Credentials } from "./client/gsheet/models";
-import { UptrackService } from "./service/uptrack";
+} from './env';
+import { UpbankAPIClient } from './client/upbank/client';
+import { subtractDaysFromDate } from './util';
+import { TransactionRepo } from './repository/transactions';
+import { SheetsAPIClient } from './client/gsheet/client';
+import { Credentials } from './client/gsheet/models';
+import { UptrackService } from './service/uptrack';
 
 async function init() {
-  let credentialsString = await getParameter(
-    "/production/google-cloud-credentials/service-account-json",
+  const credentialsString = await getParameter(
+    '/production/google-cloud-credentials/service-account-json',
     true
   );
   if (credentialsString === undefined) {
     throw new Error(
-      "Parameter /production/google-cloud-credentials/service-account-json not found"
+      'Parameter /production/google-cloud-credentials/service-account-json not found'
     );
   }
-  let credentials = JSON.parse(credentialsString) as Credentials;
+  const credentials = JSON.parse(credentialsString) as Credentials;
   return new SheetsAPIClient(credentials);
 }
 
@@ -36,11 +36,7 @@ export const handler = async (
   const gsheetClient = await init();
   const upbankClient = new UpbankAPIClient(UP_TOKEN);
   const transactionRepo = new TransactionRepo(REGION);
-  const uptrackService = new UptrackService(
-    upbankClient,
-    gsheetClient,
-    transactionRepo
-  );
+  const uptrackService = new UptrackService(upbankClient, gsheetClient, transactionRepo);
 
   const current = new Date();
   const since = subtractDaysFromDate(current, SYNC_DAYS_AGO);
