@@ -2,11 +2,25 @@ provider "aws" {
   region = var.region
 }
 
+data "archive_file" "uptrack" {
+  type        = "zip"
+  source_file = "${path.module}/../dist/index.js"
+  output_path = "${path.module}/../dist/uptrack.zip"
+}
+
 resource "aws_lambda_function" "uptrack" {
   function_name = "uptrack"
   role          = aws_iam_role.uptrack_lambda.arn
   handler       = "index.handler"
   runtime       = "nodejs20.x"
+  timeout       = 30
+
+  filename         = "${path.module}/../dist/uptrack.zip"
+  source_code_hash = data.archive_file.uptrack.output_base64sha256
+
+  environment {
+    variables = var.uptrack_lambda_env_vars
+  }
 }
 
 resource "aws_iam_role" "uptrack_lambda" {
@@ -111,14 +125,14 @@ output "event_bus_arn" {
 }
 
 resource "aws_cloudwatch_event_rule" "sync_transactions" {
-  name        = "sync_transactions"
-  description = "Trigger the Lambda function to sync transactions from Google Sheets to DynamoDB"
-  schedule_expression = "rate(15 minutes)"
+  name                = "sync_transactions"
+  description         = "Trigger the Lambda function to sync transactions from Google Sheets to DynamoDB"
+  schedule_expression = "cron(0/15 * * * ? *)"
 }
 
 resource "aws_cloudwatch_event_target" "uptrack_lambda" {
   rule = aws_cloudwatch_event_rule.sync_transactions.name
-  arn = aws_lambda_function.uptrack.arn
+  arn  = aws_lambda_function.uptrack.arn
 }
 
 output "event_rule_arn" {
