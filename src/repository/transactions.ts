@@ -1,13 +1,11 @@
-import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import { TransactionRecord } from './models';
 
 class TransactionRepo {
   private dynamo: DynamoDBDocument;
 
-  constructor(region: string) {
-    const client = new DynamoDB({ region });
-    this.dynamo = DynamoDBDocument.from(client);
+  constructor(dynamo: DynamoDBDocument) {
+    this.dynamo = dynamo;
   }
 
   async list(userID: string, trxRecordIDs: string[]) {
@@ -25,7 +23,7 @@ class TransactionRepo {
 
     const data = await this.dynamo.batchGet(params);
     if (!data.Responses || !data.Responses['uptrack_transactions']) {
-      throw new Error('No transactions found.');
+      throw new Error('No responses found for table uptrack_transactions');
     }
     return data.Responses['uptrack_transactions'].map(
       (item) =>

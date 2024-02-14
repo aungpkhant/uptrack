@@ -15,6 +15,8 @@ import { SheetsAPIClient } from './client/gsheet/client';
 import { Credentials } from './client/gsheet/models';
 import { UptrackService } from './service/uptrack';
 import { google } from 'googleapis';
+import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 async function init() {
   const credentialsString = await getParameter(
@@ -40,7 +42,11 @@ export const handler = async (
 ): Promise<APIGatewayProxyResult> => {
   const gsheetClient = await init();
   const upbankClient = new UpbankAPIClient(UP_TOKEN);
-  const transactionRepo = new TransactionRepo(REGION);
+
+  const ddbClient = new DynamoDB({ region: REGION });
+  const dynamo = DynamoDBDocument.from(ddbClient);
+  const transactionRepo = new TransactionRepo(dynamo);
+
   const uptrackService = new UptrackService(upbankClient, gsheetClient, transactionRepo);
 
   const current = new Date();
