@@ -14,6 +14,7 @@ import { TransactionRepo } from './repository/transactions';
 import { SheetsAPIClient } from './client/gsheet/client';
 import { Credentials } from './client/gsheet/models';
 import { UptrackService } from './service/uptrack';
+import { google } from 'googleapis';
 
 async function init() {
   const credentialsString = await getParameter(
@@ -26,7 +27,11 @@ async function init() {
     );
   }
   const credentials = JSON.parse(credentialsString) as Credentials;
-  return new SheetsAPIClient(credentials);
+  const { client_email, private_key } = credentials;
+  const googleJWT = new google.auth.JWT(client_email, undefined, private_key, [
+    'https://www.googleapis.com/auth/spreadsheets',
+  ]);
+  return new SheetsAPIClient(google.sheets({ version: 'v4', auth: googleJWT }));
 }
 
 export const handler = async (
