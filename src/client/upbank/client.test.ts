@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { UpbankAPIClient } from './client';
 import { ListTransactionParams, ListTransactionResponse } from './models';
 
@@ -10,6 +10,10 @@ describe('UpbankAPIClient', () => {
     global.fetch = mockFetch;
   });
 
+  beforeEach(() => {
+    mockFetch.mockClear();
+  });
+
   afterAll(() => {
     global.fetch = _fetch;
   });
@@ -18,6 +22,26 @@ describe('UpbankAPIClient', () => {
   const client = new UpbankAPIClient(upToken);
 
   describe('listTransactionsByAccount', () => {
+    it('should throw an error when request fails', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+
+      const accountID = 'TEST_ACCOUNT_ID';
+      const params: ListTransactionParams = {
+        size: 10,
+        since: new Date('2021-01-01'),
+        until: new Date('2021-01-31'),
+        status: 'SETTLED',
+      };
+
+      await expect(client.listTransactionsByAccount(accountID, params)).rejects.toThrowError(
+        /listTransactionsByAccount failed with code/
+      );
+    });
+
     it('should return a list of transactions for a given account', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
