@@ -3,10 +3,6 @@ import { ListTransactionParams, ListTransactionResponse } from './models';
 export const UPBANK_BASE_URL = 'https://api.up.com.au/api/v1';
 
 class UpbankAPIClient {
-  constructor(private readonly upToken: string) {
-    this.upToken = upToken;
-  }
-
   private formatListTransactionsParams(params: ListTransactionParams): URLSearchParams {
     const p = new URLSearchParams();
     p.append('page[size]', params.size.toString());
@@ -17,6 +13,7 @@ class UpbankAPIClient {
   }
 
   listTransactionsByAccount(
+    upToken: string,
     accountID: string,
     params: ListTransactionParams
   ): Promise<ListTransactionResponse> {
@@ -25,7 +22,7 @@ class UpbankAPIClient {
     return fetch(url, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${this.upToken}`,
+        Authorization: `Bearer ${upToken}`,
       },
     })
       .then((res) => {

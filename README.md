@@ -15,3 +15,4 @@ Also to add a practical project to my portfolio.
 - [x] Sync expenses to spreadsheet
 - [ ] Monthly expense summary email
 - [ ] Customize sheet columns
+- [ ] Write set up docs

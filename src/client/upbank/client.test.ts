@@ -18,8 +18,9 @@ describe('UpbankAPIClient', () => {
     global.fetch = _fetch;
   });
 
+  const client = new UpbankAPIClient();
   const upToken = 'TEST_UP_TOKEN';
-  const client = new UpbankAPIClient(upToken);
+  const accountID = 'TEST_ACCOUNT_ID';
 
   describe('listTransactionsByAccount', () => {
     it('should throw an error when request fails', async () => {
@@ -29,7 +30,6 @@ describe('UpbankAPIClient', () => {
         statusText: 'Internal Server Error',
       });
 
-      const accountID = 'TEST_ACCOUNT_ID';
       const params: ListTransactionParams = {
         size: 10,
         since: new Date('2021-01-01'),
@@ -37,9 +37,9 @@ describe('UpbankAPIClient', () => {
         status: 'SETTLED',
       };
 
-      await expect(client.listTransactionsByAccount(accountID, params)).rejects.toThrowError(
-        /listTransactionsByAccount failed with code/
-      );
+      await expect(
+        client.listTransactionsByAccount(upToken, accountID, params)
+      ).rejects.toThrowError(/listTransactionsByAccount failed with code/);
     });
 
     it('should return a list of transactions for a given account', async () => {
@@ -60,7 +60,6 @@ describe('UpbankAPIClient', () => {
         }),
       });
 
-      const accountID = 'TEST_ACCOUNT_ID';
       const params: ListTransactionParams = {
         size: 10,
         since: new Date('2021-01-01'),
@@ -69,6 +68,7 @@ describe('UpbankAPIClient', () => {
       };
 
       const response: ListTransactionResponse = await client.listTransactionsByAccount(
+        upToken,
         accountID,
         params
       );
@@ -78,7 +78,7 @@ describe('UpbankAPIClient', () => {
         'https://api.up.com.au/api/v1/accounts/TEST_ACCOUNT_ID/transactions?page%5Bsize%5D=10&filter%5Bsince%5D=2021-01-01T00%3A00%3A00.000Z&filter%5Buntil%5D=2021-01-31T00%3A00%3A00.000Z&filter%5Bstatus%5D=SETTLED',
         {
           headers: {
-            Authorization: `Bearer ${upToken}`,
+            Authorization: `Bearer TEST_UP_TOKEN`,
           },
           method: 'GET',
         }

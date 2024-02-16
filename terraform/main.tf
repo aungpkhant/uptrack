@@ -50,6 +50,21 @@ output "uptrack_lambda_arn" {
   value = aws_iam_role.uptrack_lambda.arn
 }
 
+resource "aws_dynamodb_table" "uptrack_users" {
+  name         = "uptrack_users"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  tags = {
+    Name = "uptrack"
+  }
+}
+
 resource "aws_dynamodb_table" "uptrack_transactions" {
   name         = "uptrack_transactions"
   billing_mode = "PAY_PER_REQUEST"
@@ -79,7 +94,7 @@ resource "aws_iam_policy" "lambda_dynamodb_full_access" {
     Statement = [{
       Effect   = "Allow",
       Action   = "dynamodb:*",
-      Resource = aws_dynamodb_table.uptrack_transactions.arn
+      Resource = [aws_dynamodb_table.uptrack_users.arn, aws_dynamodb_table.uptrack_transactions.arn]
     }]
   })
 }
@@ -131,8 +146,18 @@ resource "aws_cloudwatch_event_rule" "sync_transactions" {
 }
 
 resource "aws_cloudwatch_event_target" "uptrack_lambda" {
+  for_each = { for i, v in var.uptrack_users : i => v }
+
   rule = aws_cloudwatch_event_rule.sync_transactions.name
   arn  = aws_lambda_function.uptrack.arn
+
+  input = jsonencode({
+    action = "sync"
+    details = {
+      user : each.value.user_id,
+      sync_days_ago : each.value.sync_days_ago
+    }
+  })
 }
 
 output "event_rule_arn" {

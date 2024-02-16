@@ -1,4 +1,4 @@
-import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
+import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 
 function requireEnv(envName: string): string {
   const value = process.env[envName];
@@ -9,12 +9,7 @@ function requireEnv(envName: string): string {
   return value;
 }
 
-const UP_TOKEN = requireEnv("UP_TOKEN");
-const USER_ID = requireEnv("USER_ID");
-const ACCOUNT_ID = requireEnv("ACCOUNT_ID");
-const REGION = requireEnv("REGION");
-const SPREADHSHEET_ID = requireEnv("SPREADHSHEET_ID");
-const SYNC_DAYS_AGO = parseInt(requireEnv("SYNC_DAYS_AGO"));
+const REGION = requireEnv('REGION');
 
 const client = new SSMClient({ region: REGION });
 
@@ -33,12 +28,4 @@ async function getParameter(name: string, withDecryption: boolean) {
   }
 }
 
-export {
-  UP_TOKEN,
-  USER_ID,
-  ACCOUNT_ID,
-  REGION,
-  SPREADHSHEET_ID,
-  SYNC_DAYS_AGO,
-  getParameter,
-};
+export { REGION, getParameter };

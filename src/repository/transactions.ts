@@ -3,6 +3,7 @@ import { TransactionRecord } from './models';
 
 class TransactionRepo {
   private dynamo: DynamoDBDocument;
+  private readonly tableName = 'uptrack_transactions';
 
   constructor(dynamo: DynamoDBDocument) {
     this.dynamo = dynamo;
@@ -15,17 +16,17 @@ class TransactionRepo {
     }));
     const params = {
       RequestItems: {
-        uptrack_transactions: {
+        [this.tableName]: {
           Keys: keys,
         },
       },
     };
 
     const data = await this.dynamo.batchGet(params);
-    if (!data.Responses || !data.Responses['uptrack_transactions']) {
-      throw new Error('No responses found for table uptrack_transactions');
+    if (!data.Responses || !data.Responses[this.tableName]) {
+      throw new Error(`No responses found for table ${this.tableName}`);
     }
-    return data.Responses['uptrack_transactions'].map(
+    return data.Responses[this.tableName].map(
       (item) =>
         ({
           owner_id: item.owner_id,
@@ -41,7 +42,7 @@ class TransactionRepo {
   async batchCreate(userID: string, transactions: TransactionRecord[]) {
     const params = {
       RequestItems: {
-        uptrack_transactions: transactions.map((transaction) => ({
+        [this.tableName]: transactions.map((transaction) => ({
           PutRequest: {
             Item: transaction,
           },

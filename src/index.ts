@@ -1,13 +1,5 @@
 import { Context, APIGatewayProxyResult, APIGatewayEvent } from 'aws-lambda';
-import {
-  UP_TOKEN,
-  USER_ID,
-  ACCOUNT_ID,
-  SPREADHSHEET_ID,
-  SYNC_DAYS_AGO,
-  REGION,
-  getParameter,
-} from './env';
+import { REGION, getParameter } from './env';
 import { UpbankAPIClient } from './client/upbank/client';
 import { subtractDaysFromDate } from './util';
 import { TransactionRepo } from './repository/transactions';
@@ -17,6 +9,7 @@ import { UptrackService } from './service/uptrack';
 import { google } from 'googleapis';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import { UserRepo } from './repository/users';
 
 async function init() {
   const credentialsString = await getParameter(
@@ -36,32 +29,57 @@ async function init() {
   return new SheetsAPIClient(google.sheets({ version: 'v4', auth: googleJWT }));
 }
 
+interface CustomAPIGatewayEvent extends APIGatewayEvent {
+  action: 'sync';
+  details: {
+    user: string;
+    sync_days_ago: number;
+  };
+}
+
 export const handler = async (
-  event: APIGatewayEvent,
+  event: CustomAPIGatewayEvent,
   context: Context
 ): Promise<APIGatewayProxyResult> => {
-  const gsheetClient = await init();
-  const upbankClient = new UpbankAPIClient(UP_TOKEN);
+  const { action, details } = event;
 
+  // Initialize services
+  const gsheetClient = await init();
   const ddbClient = new DynamoDB({ region: REGION });
   const dynamo = DynamoDBDocument.from(ddbClient);
   const transactionRepo = new TransactionRepo(dynamo);
-
+  const userRepo = new UserRepo(dynamo);
+  const upbankClient = new UpbankAPIClient();
   const uptrackService = new UptrackService(upbankClient, gsheetClient, transactionRepo);
 
-  const current = new Date();
-  const since = subtractDaysFromDate(current, SYNC_DAYS_AGO);
+  if (action === 'sync') {
+    const { sync_days_ago, user } = details;
 
-  const results = await uptrackService.syncTransactions(
-    USER_ID,
-    ACCOUNT_ID,
-    SPREADHSHEET_ID,
-    since,
-    current
-  );
+    const current = new Date();
+    const since = subtractDaysFromDate(current, sync_days_ago);
+
+    const u = await userRepo.getByID(user);
+
+    const results = await uptrackService.syncTransactions(
+      u.user_id,
+      u.account_id,
+      u.spreadsheet_id,
+      u.up_token,
+      since,
+      current
+    );
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        action,
+        details: results,
+      }),
+    };
+  }
 
   return {
     statusCode: 200,
-    body: JSON.stringify(results),
+    body: JSON.stringify(action),
   };
 };

@@ -16,3 +16,17 @@ export class TransactionRecord {
     this.content_hash = content_hash;
   }
 }
+
+export class User {
+  user_id: string;
+  account_id: string;
+  spreadsheet_id: string;
+  up_token: string;
+
+  constructor(user_id: string, account_id: string, spreadsheet_id: string, up_token: string) {
+    this.user_id = user_id;
+    this.account_id = account_id;
+    this.spreadsheet_id = spreadsheet_id;
+    this.up_token = up_token;
+  }
+}

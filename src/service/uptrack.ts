@@ -119,10 +119,11 @@ class UptrackService {
     userID: string,
     accountID: string,
     spreadsheetID: string,
+    upToken: string,
     since: Date,
     until: Date
   ) {
-    const response = await this.upbankClient.listTransactionsByAccount(accountID, {
+    const response = await this.upbankClient.listTransactionsByAccount(upToken, accountID, {
       size: 100,
       since,
       until,
