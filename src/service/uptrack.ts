@@ -172,6 +172,8 @@ class UptrackService {
     return {
       created: createdTransactionsGoogleSheet.length,
       updated: 0,
+      in_sync: transactions.length - createdTransactionsGoogleSheet.length,
+      checked: transactions.length,
     };
   }
 }
