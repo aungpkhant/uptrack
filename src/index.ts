@@ -5,11 +5,13 @@ import { subtractDaysFromDate } from './util';
 import { TransactionRepo } from './repository/transactions';
 import { SheetsAPIClient } from './client/gsheet/client';
 import { Credentials } from './client/gsheet/models';
-import { UptrackService } from './service/uptrack';
+import { UptrackService } from './service/uptrack/service';
 import { google } from 'googleapis';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { UserRepo } from './repository/users';
+import { MetricPublisherService } from './service/metric-publisher/service';
+import { CloudWatchClient } from '@aws-sdk/client-cloudwatch';
 
 async function init() {
   const credentialsString = await getParameter(
@@ -50,7 +52,14 @@ export const handler = async (
   const transactionRepo = new TransactionRepo(dynamo);
   const userRepo = new UserRepo(dynamo);
   const upbankClient = new UpbankAPIClient();
-  const uptrackService = new UptrackService(upbankClient, gsheetClient, transactionRepo);
+  const cloudWatchClient = new CloudWatchClient({ region: REGION });
+  const metricPublisher = new MetricPublisherService(cloudWatchClient);
+  const uptrackService = new UptrackService(
+    upbankClient,
+    gsheetClient,
+    transactionRepo,
+    metricPublisher
+  );
 
   if (action === 'sync') {
     const { sync_days_ago, user } = details;
@@ -68,6 +77,7 @@ export const handler = async (
       since,
       current
     );
+    await metricPublisher.flush();
 
     return {
       statusCode: 200,

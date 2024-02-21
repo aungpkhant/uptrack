@@ -13,7 +13,7 @@ resource "aws_lambda_function" "uptrack" {
   role          = aws_iam_role.uptrack_lambda.arn
   handler       = "index.handler"
   runtime       = "nodejs20.x"
-  timeout       = 30
+  timeout       = 60
 
   filename         = "${path.module}/../dist/uptrack.zip"
   source_code_hash = data.archive_file.uptrack.output_base64sha256
@@ -170,4 +170,26 @@ resource "aws_lambda_permission" "eventbridge_permission" {
   function_name = aws_lambda_function.uptrack.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.sync_transactions.arn
+}
+
+resource "aws_iam_policy" "cloudwatch_put_metrics_policy" {
+  name        = "CloudWatchPutMetricsPolicy"
+  description = "Policy for writing custom metrics to CloudWatch"
+
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : "cloudwatch:PutMetricData",
+        "Resource" : "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy_attachment" "cloudwatch_put_metrics_policy_attachment" {
+  name       = "CloudWatchPutMetricsPolicyAttachment"
+  roles      = [aws_iam_role.uptrack_lambda.name]
+  policy_arn = aws_iam_policy.cloudwatch_put_metrics_policy.arn
 }

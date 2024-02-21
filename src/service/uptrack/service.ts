@@ -1,23 +1,27 @@
-import { SheetsAPIClient } from '../client/gsheet/client';
-import { UpbankAPIClient } from '../client/upbank/client';
-import { Transaction } from '../client/upbank/models';
-import { mapToTransactionRecord } from '../mapper/transaction';
-import { TransactionRepo } from '../repository/transactions';
-import { getMonthShortName, hashTransaction } from '../util';
+import { SheetsAPIClient } from '../../client/gsheet/client';
+import { UpbankAPIClient } from '../../client/upbank/client';
+import { Transaction } from '../../client/upbank/models';
+import { mapToTransactionRecord } from '../../mapper/transaction';
+import { TransactionRepo } from '../../repository/transactions';
+import { getMonthShortName, hashTransaction } from '../../util';
+import { MetricPublisherService } from '../metric-publisher/service';
 
 class UptrackService {
   private upbankClient: UpbankAPIClient;
   private gsheetClient: SheetsAPIClient;
   private transactionRepo: TransactionRepo;
+  private metricPublisher: MetricPublisherService;
 
   constructor(
     upbankClient: UpbankAPIClient,
     gsheetClient: SheetsAPIClient,
-    transactionRepo: TransactionRepo
+    transactionRepo: TransactionRepo,
+    metricPublisher: MetricPublisherService
   ) {
     this.upbankClient = upbankClient;
     this.gsheetClient = gsheetClient;
     this.transactionRepo = transactionRepo;
+    this.metricPublisher = metricPublisher;
   }
 
   private filterExpenseTransasctions(transactions: Transaction[]) {
@@ -100,6 +104,7 @@ class UptrackService {
       const transactionsForMonth = transactionByMonthMap[key];
       const rows = transactionsForMonth.map(this.formatTransactionToGoogleSheetRow);
 
+      const startAppendDataGSheet = performance.now();
       return this.gsheetClient
         .appendData(spreadsheetID, sheetName, 'A:H', rows)
         .then(() => {
@@ -111,6 +116,13 @@ class UptrackService {
             transactionsForMonth
           );
           return transactionsForMonth;
+        })
+        .finally(() => {
+          const endAppendDataGSheet = performance.now();
+          this.metricPublisher.recordExternalAPILatency(
+            'GoogleSheets_AppendData',
+            endAppendDataGSheet - startAppendDataGSheet
+          );
         });
     });
   }
@@ -123,12 +135,18 @@ class UptrackService {
     since: Date,
     until: Date
   ) {
+    const startListTransactionsByAccount = performance.now();
     const response = await this.upbankClient.listTransactionsByAccount(upToken, accountID, {
       size: 100,
       since,
       until,
       status: 'SETTLED',
     });
+    const endListTransactionsByAccount = performance.now();
+    this.metricPublisher.recordExternalAPILatency(
+      'Upbank_ListTransactionsByAccount',
+      endListTransactionsByAccount - startListTransactionsByAccount
+    );
 
     let transactions = response.data;
     if (transactions.length === 0) {
