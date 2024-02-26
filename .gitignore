@@ -3,3 +3,5 @@ dist
 terraform.tfvars
 .env
 coverage/
+scripts/gsheet_formats/*
+scripts/experimental/*

@@ -1,3 +1,5 @@
+import { GSheetColumnMapping } from './types';
+
 export class TransactionRecord {
   owner_id: string;
   transaction_id: string;
@@ -28,5 +30,17 @@ export class User {
     this.account_id = account_id;
     this.spreadsheet_id = spreadsheet_id;
     this.up_token = up_token;
+  }
+}
+
+export class UserSheetColumnMapping {
+  user_id: string;
+  year_month: number;
+  column_mappings: GSheetColumnMapping;
+
+  constructor(user_id: string, year_month: number, column_mappings: GSheetColumnMapping) {
+    this.user_id = user_id;
+    this.year_month = year_month;
+    this.column_mappings = column_mappings;
   }
 }

@@ -12,6 +12,7 @@ import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { UserRepo } from './repository/users';
 import { MetricPublisherService } from './service/metric-publisher/service';
 import { CloudWatchClient } from '@aws-sdk/client-cloudwatch';
+import { ColumnMappingRepo } from './repository/columnMappings';
 
 async function init() {
   const credentialsString = await getParameter(
@@ -51,6 +52,7 @@ export const handler = async (
   const dynamo = DynamoDBDocument.from(ddbClient);
   const transactionRepo = new TransactionRepo(dynamo);
   const userRepo = new UserRepo(dynamo);
+  const columnMappingRepo = new ColumnMappingRepo(dynamo);
   const upbankClient = new UpbankAPIClient();
   const cloudWatchClient = new CloudWatchClient({ region: REGION });
   const metricPublisher = new MetricPublisherService(cloudWatchClient);
@@ -58,6 +60,7 @@ export const handler = async (
     upbankClient,
     gsheetClient,
     transactionRepo,
+    columnMappingRepo,
     metricPublisher
   );
 

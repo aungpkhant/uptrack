@@ -1,26 +1,32 @@
+import { formatDate } from 'date-fns';
 import { SheetsAPIClient } from '../../client/gsheet/client';
 import { UpbankAPIClient } from '../../client/upbank/client';
 import { Transaction } from '../../client/upbank/models';
 import { mapToTransactionRecord } from '../../mapper/transaction';
+import { ColumnMappingRepo } from '../../repository/columnMappings';
 import { TransactionRepo } from '../../repository/transactions';
-import { getMonthShortName, hashTransaction } from '../../util';
+import { GSheetColumnMapping } from '../../repository/types';
+import { getMonthShortName, hashTransaction, resolve } from '../../util';
 import { MetricPublisherService } from '../metric-publisher/service';
 
 class UptrackService {
   private upbankClient: UpbankAPIClient;
   private gsheetClient: SheetsAPIClient;
   private transactionRepo: TransactionRepo;
+  private columnMappingRepo: ColumnMappingRepo;
   private metricPublisher: MetricPublisherService;
 
   constructor(
     upbankClient: UpbankAPIClient,
     gsheetClient: SheetsAPIClient,
     transactionRepo: TransactionRepo,
+    columnMappingRepo: ColumnMappingRepo,
     metricPublisher: MetricPublisherService
   ) {
     this.upbankClient = upbankClient;
     this.gsheetClient = gsheetClient;
     this.transactionRepo = transactionRepo;
+    this.columnMappingRepo = columnMappingRepo;
     this.metricPublisher = metricPublisher;
   }
 
@@ -67,7 +73,7 @@ class UptrackService {
       const m = t.attributes.createdAt.getMonth();
       const y = t.attributes.createdAt.getFullYear();
 
-      const key = `${getMonthShortName(m)} ${y}`;
+      const key = `${y}-${m}`;
 
       if (!transactionByMonthMap[key]) {
         transactionByMonthMap[key] = [];
@@ -78,44 +84,76 @@ class UptrackService {
     return transactionByMonthMap;
   }
 
-  private formatTransactionToGoogleSheetRow(t: Transaction) {
-    const date = `${t.attributes.createdAt.getDate()} ${getMonthShortName(t.attributes.createdAt.getMonth())} ${t.attributes.createdAt.getFullYear()}`;
-    const unsignedAmount = t.attributes.amount.value.split('-')[1];
-    return [
-      date,
-      t.attributes.description,
-      t.attributes.message,
-      t.relationships.category?.data?.id,
-      unsignedAmount,
-      null,
-      unsignedAmount,
-      'bot',
-    ];
+  private formatTransactionToGoogleSheetRow(t: Transaction, format: GSheetColumnMapping) {
+    const row = [] as string[];
+
+    for (const [letter, mapping] of Object.entries(format)) {
+      // turn A to index 0, B to index 2
+      const columnIndex = letter.charCodeAt(0) - 65;
+
+      // Constant value case
+      if (mapping.field === null) {
+        row[columnIndex] = mapping.value;
+        continue;
+      }
+
+      // Upbank field case
+      let value: any = resolve(mapping.field, t);
+      if (mapping.type === 'timestamp' && mapping.format) {
+        value = formatDate(value, mapping.format);
+      }
+      if (mapping.field === 'attributes.amount.value') {
+        // Unsign the amount as only expenses are tracked
+        value = value.split('-')[1];
+      }
+
+      row[columnIndex] = value;
+    }
+
+    return row;
   }
 
-  private createTransactionsOnGoogleSheet(spreadsheetID: string, transactions: Transaction[]) {
+  private async createTransactionsOnGoogleSheet(
+    userID: string,
+    spreadsheetID: string,
+    transactions: Transaction[]
+  ) {
     if (transactions.length === 0) {
-      return null;
+      return [];
     }
-    const transactionByMonthMap = this.groupTransactionsByMonthAndYear(transactions);
 
-    return Object.keys(transactionByMonthMap).map((key) => {
-      const sheetName = key;
+    const transactionByMonthMap = this.groupTransactionsByMonthAndYear(transactions);
+    const createdTransactions = [] as Transaction[];
+    const promises = Object.keys(transactionByMonthMap).map(async (key) => {
+      const [year, month] = key.split('-');
       const transactionsForMonth = transactionByMonthMap[key];
-      const rows = transactionsForMonth.map(this.formatTransactionToGoogleSheetRow);
+
+      const columnMapping = await this.columnMappingRepo.getGSheetFormatForYearAndMonth(
+        userID,
+        Number(year),
+        Number(month)
+      );
+
+      if (!columnMapping) {
+        throw new Error(`No column mapping found for user ${userID} for ${year}-${month}`);
+      }
+
+      const rows = transactionsForMonth.map((t) =>
+        this.formatTransactionToGoogleSheetRow(t, columnMapping.column_mappings)
+      );
+      const sheetName = `${getMonthShortName(Number(month))} ${year}`;
 
       const startAppendDataGSheet = performance.now();
-      return this.gsheetClient
+      await this.gsheetClient
         .appendData(spreadsheetID, sheetName, 'A:H', rows)
         .then(() => {
-          return transactionsForMonth;
+          createdTransactions.push(...transactionsForMonth);
         })
         .catch((e) => {
           console.error(
             `Error appending ${transactionsForMonth.length} rows to gsheet`,
             transactionsForMonth
           );
-          return transactionsForMonth;
         })
         .finally(() => {
           const endAppendDataGSheet = performance.now();
@@ -125,6 +163,9 @@ class UptrackService {
           );
         });
     });
+
+    await Promise.all(promises);
+    return createdTransactions;
   }
 
   async syncTransactions(
@@ -160,22 +201,11 @@ class UptrackService {
 
     const { toCreate, toUpdate } = await this.categorizeTransactions(userID, transactions);
 
-    let createdTransactionsGoogleSheet = [] as Transaction[];
-
-    if (toCreate.length > 0) {
-      const promises = this.createTransactionsOnGoogleSheet(spreadsheetID, toCreate);
-
-      // Maybe better to move this logic to createTransactionsOnGoogleSheet?
-      if (promises !== null) {
-        await Promise.allSettled(promises).then((results) => {
-          results.forEach((result) => {
-            if (result.status === 'fulfilled') {
-              createdTransactionsGoogleSheet = createdTransactionsGoogleSheet.concat(result.value);
-            }
-          });
-        });
-      }
-    }
+    const createdTransactionsGoogleSheet = await this.createTransactionsOnGoogleSheet(
+      userID,
+      spreadsheetID,
+      toCreate
+    );
 
     if (createdTransactionsGoogleSheet.length > 0) {
       await this.transactionRepo.batchCreate(

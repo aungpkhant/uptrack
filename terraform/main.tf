@@ -13,7 +13,8 @@ resource "aws_lambda_function" "uptrack" {
   role          = aws_iam_role.uptrack_lambda.arn
   handler       = "index.handler"
   runtime       = "nodejs20.x"
-  timeout       = 60
+  timeout       = 90
+  memory_size   = 256
 
   filename         = "${path.module}/../dist/uptrack.zip"
   source_code_hash = data.archive_file.uptrack.output_base64sha256
@@ -86,6 +87,27 @@ resource "aws_dynamodb_table" "uptrack_transactions" {
   }
 }
 
+resource "aws_dynamodb_table" "uptrack_gsheet_formats" {
+  name         = "uptrack_gsheet_formats"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+  range_key    = "year_month"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "year_month"
+    type = "N"
+  }
+
+  tags = {
+    Name = "uptrack"
+  }
+}
+
 resource "aws_iam_policy" "lambda_dynamodb_full_access" {
   name        = "lambda_dynamodb_full_access"
   description = "Provides full access to the DynamoDB table"
@@ -94,7 +116,7 @@ resource "aws_iam_policy" "lambda_dynamodb_full_access" {
     Statement = [{
       Effect   = "Allow",
       Action   = "dynamodb:*",
-      Resource = [aws_dynamodb_table.uptrack_users.arn, aws_dynamodb_table.uptrack_transactions.arn]
+      Resource = [aws_dynamodb_table.uptrack_users.arn, aws_dynamodb_table.uptrack_transactions.arn, aws_dynamodb_table.uptrack_gsheet_formats.arn]
     }]
   })
 }
