@@ -1,4 +1,5 @@
 import { GSheetColumnMapping } from './types';
+import { z } from 'zod';
 
 export class TransactionRecord {
   owner_id: string;
@@ -19,18 +20,16 @@ export class TransactionRecord {
   }
 }
 
-export class User {
-  user_id: string;
-  account_id: string;
-  spreadsheet_id: string;
-  up_token: string;
+export const UserSchema = z.object({
+  pk: z.string(),
+  sk: z.string(),
+  account_id: z.string(),
+  spreadsheet_id: z.string(),
+  up_token: z.string(),
+});
 
-  constructor(user_id: string, account_id: string, spreadsheet_id: string, up_token: string) {
-    this.user_id = user_id;
-    this.account_id = account_id;
-    this.spreadsheet_id = spreadsheet_id;
-    this.up_token = up_token;
-  }
+export interface User extends Exclude<z.infer<typeof UserSchema>, 'pk' | 'sk'> {
+  user_id: string;
 }
 
 export class UserSheetColumnMapping {

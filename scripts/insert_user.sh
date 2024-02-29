@@ -13,6 +13,6 @@ spreadsheet_id=$3
 up_token=$4
 
 aws dynamodb put-item \
-    --table-name uptrack_users \
+    --table-name uptrack \
     --item \
-        '{"user_id": {"S": "'$user_id'"}, "account_id": {"S": "'$account_id'"}, "spreadsheet_id": {"S": "'$spreadsheet_id'"}, "up_token": {"S": "'$up_token'"}}'
+        '{"pk": {"S": "user#'$user_id'"}, "sk": {"S": "user#'$user_id'"}, "account_id": {"S": "'$account_id'"}, "spreadsheet_id": {"S": "'$spreadsheet_id'"}, "up_token": {"S": "'$up_token'"}}'

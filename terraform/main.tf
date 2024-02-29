@@ -51,6 +51,27 @@ output "uptrack_lambda_arn" {
   value = aws_iam_role.uptrack_lambda.arn
 }
 
+resource "aws_dynamodb_table" "uptrack" {
+  name         = "uptrack"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "pk"
+  range_key    = "sk"
+
+  attribute {
+    name = "pk"
+    type = "S"
+  }
+
+  attribute {
+    name = "sk"
+    type = "S"
+  }
+
+  tags = {
+    Name = "uptrack"
+  }
+}
+
 resource "aws_dynamodb_table" "uptrack_users" {
   name         = "uptrack_users"
   billing_mode = "PAY_PER_REQUEST"
@@ -116,7 +137,7 @@ resource "aws_iam_policy" "lambda_dynamodb_full_access" {
     Statement = [{
       Effect   = "Allow",
       Action   = "dynamodb:*",
-      Resource = [aws_dynamodb_table.uptrack_users.arn, aws_dynamodb_table.uptrack_transactions.arn, aws_dynamodb_table.uptrack_gsheet_formats.arn]
+      Resource = [aws_dynamodb_table.uptrack_users.arn, aws_dynamodb_table.uptrack_transactions.arn, aws_dynamodb_table.uptrack_gsheet_formats.arn, aws_dynamodb_table.uptrack.arn]
     }]
   })
 }
