@@ -32,6 +32,23 @@ export interface User extends Exclude<z.infer<typeof UserSchema>, 'pk' | 'sk'> {
   user_id: string;
 }
 
+const mapping = z.custom<GSheetColumnMapping>((data: any) => {
+  Object.keys(data).forEach((key) => {
+    if (!key.match(/[A-Z]/)) {
+      throw new Error('Key must be a single letter');
+    }
+  });
+  return true;
+});
+
+export const ColumnMappingSchema = z.object({
+  pk: z.string(),
+  sk: z.string(),
+  column_mappings: mapping,
+});
+
+export interface ColumnMapping extends Exclude<z.infer<typeof ColumnMappingSchema>, 'pk' | 'sk'> {}
+
 export class UserSheetColumnMapping {
   user_id: string;
   year_month: number;

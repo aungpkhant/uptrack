@@ -128,7 +128,7 @@ class UptrackService {
       const [year, month] = key.split('-');
       const transactionsForMonth = transactionByMonthMap[key];
 
-      const columnMapping = await this.columnMappingRepo.getGSheetFormatForYearAndMonth(
+      const columnMapping = await this.columnMappingRepo.getColumnMapping(
         userID,
         Number(year),
         Number(month)
@@ -139,7 +139,7 @@ class UptrackService {
       }
 
       const rows = transactionsForMonth.map((t) =>
-        this.formatTransactionToGoogleSheetRow(t, columnMapping.column_mappings)
+        this.formatTransactionToGoogleSheetRow(t, columnMapping)
       );
       const sheetName = `${getMonthShortName(Number(month))} ${year}`;
 

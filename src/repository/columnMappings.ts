@@ -1,22 +1,22 @@
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
-import { UserSheetColumnMapping } from './models';
+import { ColumnMappingSchema } from './models';
 
 class ColumnMappingRepo {
   private dynamo: DynamoDBDocument;
-  private readonly tableName = 'uptrack_gsheet_formats';
+  private readonly tableName = 'uptrack';
 
   constructor(dynamo: DynamoDBDocument) {
     this.dynamo = dynamo;
   }
 
-  async getGSheetFormatForYearAndMonth(userID: string, year: number, month: number) {
-    const yearMonth = year * 100 + month;
+  async getColumnMapping(userID: string, year: number, month: number) {
+    const yearMonth = `${year}/${String(month).padStart(2, '0')}`;
     const params = {
       TableName: this.tableName,
-      KeyConditionExpression: 'user_id = :user_id AND year_month <= :year_month',
+      KeyConditionExpression: 'pk = :pk AND sk <= :sk',
       ExpressionAttributeValues: {
-        ':user_id': userID,
-        ':year_month': yearMonth,
+        ':pk': `user#${userID}`,
+        ':sk': `column_mapping#${yearMonth}`,
       },
       ScanIndexForward: false,
       Limit: 1,
@@ -26,7 +26,8 @@ class ColumnMappingRepo {
     if (!data.Items || data.Items.length === 0) {
       return null;
     }
-    return data.Items[0] as UserSheetColumnMapping;
+    const colMapping = ColumnMappingSchema.parse(data.Items[0]);
+    return colMapping.column_mappings;
   }
 }
 

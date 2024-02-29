@@ -3,11 +3,10 @@ import { Transaction } from '../client/upbank/models';
 
 type ColumnConstant = { field: null; type: 'string'; value: string };
 
-type UpbankFields = Leaves<Transaction>;
+type UpbankFields = Leaves<Transaction> | 'attributes.createdAt';
 type ColumnUpbank = {
   field: UpbankFields;
   type: 'string' | 'timestamp';
-  value: string;
   format?: string;
 };
 
