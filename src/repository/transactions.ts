@@ -3,7 +3,7 @@ import { TransactionRecord } from './models';
 
 class TransactionRepo {
   private dynamo: DynamoDBDocument;
-  private readonly tableName = 'uptrack_transactions';
+  private readonly tableName = 'uptrack';
 
   constructor(dynamo: DynamoDBDocument) {
     this.dynamo = dynamo;
@@ -11,8 +11,8 @@ class TransactionRepo {
 
   async list(userID: string, trxRecordIDs: string[]) {
     const keys = trxRecordIDs.map((transactionID) => ({
-      owner_id: userID,
-      transaction_id: transactionID,
+      pk: `user#${userID}`,
+      sk: `transaction#${transactionID}`,
     }));
     const params = {
       RequestItems: {
@@ -29,12 +29,11 @@ class TransactionRepo {
     return data.Responses[this.tableName].map(
       (item) =>
         ({
-          owner_id: item.owner_id,
+          owner_id: userID,
           transaction_id: item.transaction_id,
           transaction_created_at: item.transaction_created_at,
           content_hash: item.content_hash,
           created_at: item.created_at,
-          updated_at: item.updated_at,
         }) as TransactionRecord
     );
   }
@@ -44,7 +43,14 @@ class TransactionRepo {
       RequestItems: {
         [this.tableName]: transactions.map((transaction) => ({
           PutRequest: {
-            Item: transaction,
+            Item: {
+              pk: `user#${userID}`,
+              sk: `transaction#${transaction.transaction_id}`,
+              transaction_id: transaction.transaction_id,
+              transaction_created_at: transaction.transaction_created_at,
+              content_hash: transaction.content_hash,
+              created_at: transaction.transaction_created_at,
+            },
           },
         })),
       },

@@ -11,7 +11,6 @@ const transactionRecords = [
     transaction_created_at: '2021-01-01',
     content_hash: 'hash',
     created_at: '2021-01-01',
-    updated_at: '2021-01-01',
   },
   {
     owner_id: 'user_1',
@@ -19,7 +18,6 @@ const transactionRecords = [
     transaction_created_at: '2021-01-01',
     content_hash: 'hash2',
     created_at: '2021-01-01',
-    updated_at: '2021-01-01',
   },
 ];
 
@@ -40,11 +38,13 @@ describe('TransactionRepo', () => {
     it('should list transactions', async () => {
       batchGetMock.mockResolvedValue({
         Responses: {
-          uptrack_transactions: [...transactionRecords],
+          uptrack: [...transactionRecords],
         },
       });
 
-      await expect(repo.list('user_id', ['trx_id'])).resolves.toEqual([...transactionRecords]);
+      await expect(repo.list('user_1', ['trx_1', 'trx_2'])).resolves.toEqual([
+        ...transactionRecords,
+      ]);
     });
   });
 });

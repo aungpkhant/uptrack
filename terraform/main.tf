@@ -72,62 +72,6 @@ resource "aws_dynamodb_table" "uptrack" {
   }
 }
 
-resource "aws_dynamodb_table" "uptrack_users" {
-  name         = "uptrack_users"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "user_id"
-
-  attribute {
-    name = "user_id"
-    type = "S"
-  }
-
-  tags = {
-    Name = "uptrack"
-  }
-}
-
-resource "aws_dynamodb_table" "uptrack_transactions" {
-  name         = "uptrack_transactions"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "owner_id"
-  range_key    = "transaction_id"
-
-  attribute {
-    name = "owner_id"
-    type = "S"
-  }
-
-  attribute {
-    name = "transaction_id"
-    type = "S"
-  }
-
-  tags = {
-    Name = "uptrack"
-  }
-}
-
-resource "aws_dynamodb_table" "uptrack_gsheet_formats" {
-  name         = "uptrack_gsheet_formats"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "user_id"
-  range_key    = "year_month"
-
-  attribute {
-    name = "user_id"
-    type = "S"
-  }
-
-  attribute {
-    name = "year_month"
-    type = "N"
-  }
-
-  tags = {
-    Name = "uptrack"
-  }
-}
 
 resource "aws_iam_policy" "lambda_dynamodb_full_access" {
   name        = "lambda_dynamodb_full_access"
@@ -137,7 +81,7 @@ resource "aws_iam_policy" "lambda_dynamodb_full_access" {
     Statement = [{
       Effect   = "Allow",
       Action   = "dynamodb:*",
-      Resource = [aws_dynamodb_table.uptrack_users.arn, aws_dynamodb_table.uptrack_transactions.arn, aws_dynamodb_table.uptrack_gsheet_formats.arn, aws_dynamodb_table.uptrack.arn]
+      Resource = [aws_dynamodb_table.uptrack.arn]
     }]
   })
 }
