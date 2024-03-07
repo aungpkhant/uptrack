@@ -8,13 +8,28 @@ class SheetsAPIClient {
     this.sheets = sheets;
   }
 
-  async appendData(
-    spreadsheetID: string,
-    sheetName: string,
-    range: string,
-    rows: any[][]
-  ): Promise<void> {
-    await this.sheets.spreadsheets.values.append({
+  async appendData(spreadsheetID: string, sheetName: string, range: string, rows: any[][]) {
+    return await this.sheets.spreadsheets.values.append({
+      spreadsheetId: spreadsheetID,
+      range: `${sheetName}!${range}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: rows,
+      },
+    });
+  }
+
+  async get(spreadsheetID: string, sheetName: string, range: string) {
+    return await this.sheets.spreadsheets.values.get({
+      spreadsheetId: spreadsheetID,
+      majorDimension: 'ROWS',
+      range: `${sheetName}!${range}`,
+      valueRenderOption: 'UNFORMATTED_VALUE',
+    });
+  }
+
+  async update(spreadsheetID: string, sheetName: string, range: string, rows: any[][]) {
+    return await this.sheets.spreadsheets.values.update({
       spreadsheetId: spreadsheetID,
       range: `${sheetName}!${range}`,
       valueInputOption: 'USER_ENTERED',

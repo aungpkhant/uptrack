@@ -38,7 +38,7 @@ class TransactionRepo {
     );
   }
 
-  async batchCreate(userID: string, transactions: TransactionRecord[]) {
+  async batchUpsert(userID: string, transactions: TransactionRecord[]) {
     const params = {
       RequestItems: {
         [this.tableName]: transactions.map((transaction) => ({

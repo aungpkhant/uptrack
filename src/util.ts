@@ -27,11 +27,7 @@ function getMonthShortName(month: number) {
 }
 
 function hashTransaction(t: Transaction): string {
-  const data =
-    t.id +
-    t.attributes.amount.value +
-    t.attributes.description +
-    t.relationships.category?.data?.id;
+  const data = t.id + t.relationships.category?.data?.id;
   const hash = crypto.createHash('sha256').update(data).digest('hex');
   return hash;
 }
