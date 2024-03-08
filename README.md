@@ -13,6 +13,6 @@ Also to add a practical project to my portfolio.
 ### TODO
 
 - [x] Sync expenses to spreadsheet
+- [x] Customize sheet columns
 - [ ] Monthly expense summary email
-- [ ] Customize sheet columns
 - [ ] Write set up docs
